@@ -1,4 +1,4 @@
-name: Build and Push OpenClaw Docker Images
+name: 拉取最新 OpenClaw 版本并构建镜像
 
 on:
   schedule:
