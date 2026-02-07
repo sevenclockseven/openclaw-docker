@@ -121,9 +121,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Create dated tag
+      - name: Push additional tags
         run: |
           DATE_TAG=$(date +%Y%m%d)
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-update.outputs.latest_tag }} 2>/dev/null || true
           docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-update.outputs.latest_tag }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$DATE_TAG
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$DATE_TAG
 
