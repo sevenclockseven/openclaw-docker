@@ -119,16 +119,20 @@ jobs:
           context: ./upstream
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-update.outputs.latest_tag }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Tag as latest
+        run: |
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-update.outputs.latest_tag }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
       - name: Create dated tag
         run: |
           DATE_TAG=$(date +%Y%m%d)
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$DATE_TAG
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-update.outputs.latest_tag }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$DATE_TAG
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$DATE_TAG
 
       - name: Notify
