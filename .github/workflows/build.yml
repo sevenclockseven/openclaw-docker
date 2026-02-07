@@ -38,7 +38,13 @@ jobs:
 
           # 保存结果供下一步使用
           echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
-          echo "release_url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
+
+          # 使用 heredoc 语法处理包含特殊字符的 URL
+          {
+            echo "release_url<<EOF"
+            echo "$RELEASE_URL"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
           # 获取上次构建保存的 tag
           LAST_TAG_FILE=".last_release_tag"
