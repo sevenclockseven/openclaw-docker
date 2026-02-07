@@ -1,0 +1,5 @@
+# Generated files (do not commit)
+example*.yml
+example*.yaml
+*.example.*
+.last-openclaw-version
