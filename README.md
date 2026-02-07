@@ -6,14 +6,14 @@
 
 | 镜像 | 说明 |
 |-----|------|
-| `ghcr.io/sevenclockseven/openclaw-docker:latest` | 最新版本 |
-| `ghcr.io/sevenclockseven/openclaw-docker:v1.2.3` | 指定版本 |
-| `ghcr.io/sevenclockseven/openclaw-docker:20260207` | 日期标签 |
+| `ghcr.io/sevenclockseven/openclaw:latest` | 最新版本 |
+| `ghcr.io/sevenclockseven/openclaw:v1.2.3` | 指定版本 |
+| `ghcr.io/sevenclockseven/openclaw:20260207` | 日期标签 |
 
 ## 快速使用
 
 ```bash
-docker pull ghcr.io/sevenclockseven/openclaw-docker:latest
+docker pull ghcr.io/sevenclockseven/openclaw:latest
 
 docker run -d \
   --name openclaw \
@@ -21,7 +21,7 @@ docker run -d \
   -p 18790:18790 \
   -e CLAUDE_AI_SESSION_KEY=your_key \
   -v $(pwd)/data:/home/node/.openclaw \
-  ghcr.io/sevenclockseven/openclaw-docker:latest \
+  ghcr.io/sevenclockseven/openclaw:latest \
   node dist/index.js gateway --bind lan
 ```
 
@@ -30,7 +30,7 @@ docker run -d \
 ```yaml
 services:
   openclaw:
-    image: ghcr.io/sevenclockseven/openclaw-docker:latest
+    image: ghcr.io/sevenclockseven/openclaw:latest
     ports:
       - "18789:18789"
       - "18790:18790"
