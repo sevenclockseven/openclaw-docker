@@ -1,0 +1,126 @@
+name: Build and Push OpenClaw Docker Images
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [update]
+
+env:
+  DOCKERHUB_USERNAME: senvenclockseven
+  IMAGE_NAME: openclaw-cn
+  UPSTREAM_REPO: openclaw/openclaw
+
+jobs:
+  check-update:
+    name: Check for Updates
+    runs-on: ubuntu-latest
+    outputs:
+      has_update: ${{ steps.check.outputs.has_update }}
+      latest_tag: ${{ steps.check.outputs.latest_tag }}
+      release_url: ${{ steps.check.outputs.release_url }}
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+
+      - name: Check upstream repository for updates
+        id: check
+        run: |
+          # 获取上游仓库的最新 release
+          RESPONSE=$(curl -s https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/releases/latest)
+
+          LATEST_TAG=$(echo "$RESPONSE" | grep '"tag_name"' | sed 's/.*": "\(.*\)".*/\1/')
+          RELEASE_URL=$(echo "$RESPONSE" | grep '"html_url"' | sed 's/.*": "\(.*\)".*/\1/')
+
+          echo "Latest release tag: $LATEST_TAG"
+          echo "Release URL: $RELEASE_URL"
+
+          # 保存结果供下一步使用
+          echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "release_url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
+
+          # 获取上次构建保存的 tag
+          LAST_TAG_FILE=".last_release_tag"
+          if [ -f "$LAST_TAG_FILE" ]; then
+            LAST_TAG=$(cat "$LAST_TAG_FILE")
+          else
+            LAST_TAG=""
+          fi
+          echo "Last build tag: $LAST_TAG"
+
+          # 比较是否有新版本
+          if [ "$LATEST_TAG" != "$LAST_TAG" ] && [ -n "$LATEST_TAG" ]; then
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            echo "检测到新版本: $LAST_TAG -> $LATEST_TAG"
+          else
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "当前已是最新版本: $LATEST_TAG"
+          fi
+
+      - name: Save last release tag
+        if: steps.check.outputs.has_update == 'true'
+        run: |
+          echo "${{ steps.check.outputs.latest_tag }}" > .last_release_tag
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .last_release_tag
+          git commit -m "chore: update last release tag to ${{ steps.check.outputs.latest_tag }}"
+          git push
+
+  build-and-push:
+    name: Build and Push Docker Images
+    needs: check-update
+    if: needs.check-update.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout upstream repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.UPSTREAM_REPO }}
+          path: upstream
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=
+            type=ref,event=branch
+            type=match,pattern=v?(\d+).(\d+).(\d+),value=${{ needs.check-update.outputs.latest_tag }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./upstream
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.check-update.outputs.latest_tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create dated tag
+        run: |
+          DATE_TAG=$(date +%Y%m%d)
+          docker tag ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:$DATE_TAG
+          docker push ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:$DATE_TAG
+
+      - name: Notify
+        run: |
+          echo "构建完成！"
+          echo "镜像: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.check-update.outputs.latest_tag }}"
+          echo "Release: ${{ needs.check-update.outputs.release_url }}"
