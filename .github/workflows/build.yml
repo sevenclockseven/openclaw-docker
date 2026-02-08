@@ -2,7 +2,7 @@ name: 拉取最新 OpenClaw 版本并构建镜像
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch:
   repository_dispatch:
     types: [update]

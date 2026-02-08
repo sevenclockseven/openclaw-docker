@@ -2,4 +2,4 @@
 example*.yml
 example*.yaml
 *.example.*
-
+.last-openclaw-version
