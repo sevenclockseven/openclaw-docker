@@ -40,17 +40,6 @@ services:
       - ./data:/home/node/.openclaw
     command: node dist/index.js gateway --bind lan
 ```
-
-## 配置
-
-| 环境变量 | 必填 | 默认值 | 说明 |
-|---------|------|--------|------|
-| `CLAUDE_AI_SESSION_KEY` | ✅ | - | Claude AI 会话密钥 |
-| `CLAUDE_WEB_SESSION_KEY` | ❌ | - | Web 会话密钥 |
-| `CLAUDE_WEB_COOKIE` | ❌ | - | Web Cookie |
-| `OPENCLAW_GATEWAY_BIND` | ❌ | `lan` | 绑定接口 |
-| `OPENCLAW_GATEWAY_PORT` | ❌ | `18789` | 网关端口 |
-
 ## GitHub Actions
 
 自动检测上游更新并构建镜像。
