@@ -67,11 +67,8 @@ COPY --from=builder /app/extensions ./extensions
 # 复制运行时所需的文档（templates 用于 agent 任务）
 COPY --from=builder /app/docs ./docs
 
-# 仅安装生产依赖
-RUN pnpm install --frozen-lockfile --production --ignore-scripts
-
-# 清理缓存以减小镜像大小
-RUN pnpm store prune
+    # 删除 devDependencies 并清理缓存
+    RUN pnpm prune --production && pnpm store prune
 
 ENV NODE_ENV=production
 
