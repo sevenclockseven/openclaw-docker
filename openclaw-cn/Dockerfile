@@ -67,8 +67,10 @@ COPY --from=builder /app/extensions ./extensions
 # 复制运行时所需的文档（templates 用于 agent 任务）
 COPY --from=builder /app/docs ./docs
 
-    # 删除 devDependencies 并清理缓存
-    RUN pnpm prune --production && pnpm store prune
+    # 删除 devDependencies 并安装生产依赖
+    RUN rm -rf node_modules && \
+        pnpm install --production --ignore-scripts && \
+        pnpm store prune
 
 ENV NODE_ENV=production
 
