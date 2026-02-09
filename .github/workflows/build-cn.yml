@@ -111,6 +111,11 @@ jobs:
             type=raw,value=${{ needs.check-update.outputs.latest_tag }}
             type=raw,value=latest
 
+      - name: Copy local Dockerfile
+        run: |
+          cp openclaw-cn/Dockerfile upstream/Dockerfile
+          echo "Dockerfile copied to upstream directory"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
