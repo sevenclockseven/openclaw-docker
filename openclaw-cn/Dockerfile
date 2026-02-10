@@ -61,16 +61,12 @@ WORKDIR /app
 
 # 复制构建产物和扩展
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
 # 复制扩展（插件）目录，包括所有已编译的依赖
 COPY --from=builder /app/extensions ./extensions
 # 复制运行时所需的文档（templates 用于 agent 任务）
 COPY --from=builder /app/docs ./docs
-
-    # 删除 devDependencies 并安装生产依赖
-    RUN rm -rf node_modules && \
-        pnpm install --production --ignore-scripts && \
-        pnpm store prune
 
 ENV NODE_ENV=production
 
